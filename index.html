@@ -1,0 +1,73 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="admin-body">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <a href="#" class="logo">
+        <img src="assets/icons/dashboard.svg" alt="Dashboard" />
+      </a>
+      <nav class="nav">
+        <a href="#" class="nav-link active" data-page="products">
+          <img src="assets/icons/products.svg" alt="Products" />
+          <span>Products</span>
+        </a>
+        <a href="#" class="nav-link" data-page="orders">
+          <img src="assets/icons/orders.svg" alt="Orders" />
+          <span>Orders</span>
+        </a>
+        <a href="#" class="nav-link" id="logout">
+          <img src="assets/icons/logout.svg" alt="Logout" />
+          <span>Logout</span>
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <h1>Add New Product</h1>
+      <div id="auth-status">Checking auth...</div>
+
+      <form id="product-form" style="display:none;">
+        <input type="text" id="name" placeholder="Product Name" required />
+        <textarea id="description" placeholder="Description" required></textarea>
+
+        <div class="price-group">
+          <input type="number" id="price_zar" step="0.01" placeholder="Price (ZAR)" required />
+          <input type="number" id="price_mwk" step="0.01" placeholder="Price (MWK)" required />
+        </div>
+
+        <input type="text" id="sizes" placeholder="Sizes (S,M,L,XL)" required />
+        <input type="text" id="colors" placeholder="Colors (Red,Blue)" required />
+        <input type="text" id="category" placeholder="Category (T-Shirts, Jeans)" required />
+
+        <label><input type="checkbox" id="in_stock" checked /> In Stock</label>
+
+        <div class="image-upload">
+          <label>Main Image: <input type="file" id="main_image" accept="image/*" required /></label>
+          <div id="extra-images">
+            <label>Extra Images: <input type="file" id="extra_image_0" accept="image/*" /></label>
+            <button type="button" id="add-extra">+ Add More</button>
+          </div>
+        </div>
+
+        <button type="submit">Add Product</button>
+      </form>
+
+      <div id="message"></div>
+    </div>
+  </main>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
