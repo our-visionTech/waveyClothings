@@ -1,119 +1,374 @@
-<style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body,html{height:100%;overflow:hidden;background:#0A0A1A;font-family:'Orbitron',sans-serif;color:#fff;}
-  #data-bg{position:fixed;inset:0;z-index:0;}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>waveyWears | Data Flow</title>
 
-  .glass{
-    background:rgba(10,10,26,.75);
-    backdrop-filter:blur(22px);
-    border-radius:28px;
-    padding:2.5rem 1.75rem;          /* ← reduced side padding */
-    max-width:380px;                 /* ← tighter max-width */
-    width:calc(100% - 2rem);         /* ← full width minus outer gap */
-    margin:0 auto;                   /* ← center */
-    border:1px solid rgba(0,212,255,.25);
-    box-shadow:0 0 50px rgba(0,212,255,.15);
-    animation:pulse 4s ease-in-out infinite;
-    perspective:1200px;
-    min-height:520px;                /* ← guarantee space for flip */
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  @keyframes pulse{
-    0%,100%{box-shadow:0 0 50px rgba(0,212,255,.15);}
-    50%{box-shadow:0 0 70px rgba(255,46,99,.35);}
-  }
+  <!-- Tailwind + Lucide Icons via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-  .flip-container{
-    position:relative;
-    width:100%;
-    height:100%;
-    min-height:460px;                /* ← same as glass inner */
-    transition:transform .6s cubic-bezier(.4,.2,.2,1);
-    transform-style:preserve-3d;
-  }
-  .flip-container.active{transform:rotateY(180deg);}
-  .face{
-    position:absolute;
-    inset:0;
-    backface-visibility:hidden;
-    -webkit-backface-visibility:hidden;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    padding:1rem 0;                  /* ← vertical breathing room */
-  }
-  .back{transform:rotateY(180deg);}
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body,html{height:100%;overflow:hidden;background:#0A0A1A;font-family:'Orbitron',sans-serif;color:#fff;}
+    #data-bg{position:fixed;inset:0;z-index:0;}
 
-  /* ----- Input Group ----- */
-  .input-group{
-    position:relative;
-    margin-bottom:1.1rem;
-  }
-  .input-group label{
-    position:absolute;
-    left:3rem;
-    top:-0.5rem;
-    font-size:0.75rem;
-    background:rgba(10,10,26,.9);
-    padding:0 .35rem;
-    color:#00D4FF;
-  }
-  .input-group input{
-    width:100%;
-    padding:0.95rem 0.95rem 0.95rem 3rem;   /* ← slightly smaller */
-    background:rgba(255,255,255,.08);
-    border:1px solid rgba(0,212,255,.2);
-    border-radius:9999px;
-    color:#fff;
-    font-size:1rem;
-    transition:border .25s,box-shadow .25s;
-  }
-  .input-group input::placeholder{color:rgba(255,255,255,.4);}
-  .input-group input:focus{
-    outline:none;
-    border-color:#00D4FF;
-    box-shadow:0 0 0 3px rgba(0,212,255,.2);
-  }
-  .input-group svg{
-    position:absolute;
-    left:0.9rem;
-    top:50%;
-    transform:translateY(-50%);
-    width:1.2rem;
-    height:1.2rem;
-    color:#00D4FF;
-  }
+    /* Glass Panel */
+    .glass{
+      background:rgba(10,10,26,.75);
+      backdrop-filter:blur(22px);
+      border-radius:28px;
+      padding:2.5rem 1.75rem;
+      max-width:380px;
+      width:calc(100% - 2rem);
+      margin:0 auto;
+      border:1px solid rgba(0,212,255,.25);
+      box-shadow:0 0 50px rgba(0,212,255,.15);
+      animation:pulse 4s ease-in-out infinite;
+      perspective:1200px;
+      min-height:520px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    @keyframes pulse{
+      0%,100%{box-shadow:0 0 50px rgba(0,212,255,.15);}
+      50%{box-shadow:0 0 70px rgba(255,46,99,.35);}
+    }
 
-  /* ----- Buttons ----- */
-  .btn{
-    width:100%;
-    padding:0.95rem;
-    border-radius:9999px;
-    font-weight:600;
-    font-size:1.05rem;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:.5rem;
-    transition:transform .2s,box-shadow .2s;
-    background:linear-gradient(135deg,#00D4FF,#FF2E63);
-    color:#fff;
-    border:none;
-    cursor:pointer;
-  }
-  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,212,255,.3);}
-  .btn:active{transform:translateY(0);}
+    /* Flip Container */
+    .flip-container{
+      position:relative;
+      width:100%;
+      height:100%;
+      min-height:460px;
+      transition:transform .6s cubic-bezier(.4,.2,.2,1);
+      transform-style:preserve-3d;
+    }
+    .flip-container.active{transform:rotateY(180deg);}
+    .face{
+      position:absolute;
+      inset:0;
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      padding:1rem 0;
+    }
+    .back{transform:rotateY(180deg);}
 
-  /* ----- Messages ----- */
-  .msg{margin-top:.75rem;text-align:center;font-size:.875rem;}
-  .msg.error{color:#fca5a5;}
-  .msg.success{color:#86efac;}
+    /* Input Group */
+    .input-group{
+      position:relative;
+      margin-bottom:1.1rem;
+    }
+    .input-group label{
+      position:absolute;
+      left:3rem;
+      top:-0.5rem;
+      font-size:0.75rem;
+      background:rgba(10,10,26,.9);
+      padding:0 .35rem;
+      color:#00D4FF;
+    }
+    .input-group input{
+      width:100%;
+      padding:0.95rem 0.95rem 0.95rem 3rem;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(0,212,255,.2);
+      border-radius:9999px;
+      color:#fff;
+      font-size:1rem;
+      transition:border .25s,box-shadow .25s;
+    }
+    .input-group input::placeholder{color:rgba(255,255,255,.4);}
+    .input-group input:focus{
+      outline:none;
+      border-color:#00D4FF;
+      box-shadow:0 0 0 3px rgba(0,212,255,.2);
+    }
+    .input-group svg{
+      position:absolute;
+      left:0.9rem;
+      top:50%;
+      transform:translateY(-50%);
+      width:1.2rem;
+      height:1.2rem;
+      color:#00D4FF;
+    }
 
-  /* ----- Mobile ----- */
-  @media (max-width:480px){
-    .glass{padding:2rem 1.25rem;max-width:340px;}
-    .input-group input{padding:.85rem .85rem .85rem 2.75rem;font-size:.95rem;}
-  }
-</style>
+    /* Buttons */
+    .btn{
+      width:100%;
+      padding:0.95rem;
+      border-radius:9999px;
+      font-weight:600;
+      font-size:1.05rem;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:.5rem;
+      transition:transform .2s,box-shadow .2s;
+      background:linear-gradient(135deg,#00D4FF,#FF2E63);
+      color:#fff;
+      border:none;
+      cursor:pointer;
+    }
+    .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,212,255,.3);}
+    .btn:active{transform:translateY(0);}
+
+    /* Messages */
+    .msg{margin-top:.75rem;text-align:center;font-size:.875rem;}
+    .msg.error{color:#fca5a5;}
+    .msg.success{color:#86efac;}
+
+    /* Mobile */
+    @media (max-width:480px){
+      .glass{padding:2rem 1.25rem;max-width:340px;}
+      .input-group input{padding:.85rem .85rem .85rem 2.75rem;font-size:.95rem;}
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <canvas id="data-bg"></canvas>
+
+  <!-- Flip Card -->
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div class="glass">
+      <div id="card" class="flip-container">
+        <!-- FRONT: Login / Register -->
+        <div id="front" class="face">
+          <!-- REGISTER -->
+          <div id="register" class="hidden space-y-5">
+            <h1 class="text-center text-3xl font-bold bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">
+              Create Account
+            </h1>
+
+            <div class="input-group">
+              <i data-lucide="user"></i>
+              <label>Full name</label>
+              <input type="text" id="reg-name" placeholder="John Doe">
+            </div>
+
+            <div class="input-group">
+              <i data-lucide="mail"></i>
+              <label>Email</label>
+              <input type="email" id="reg-email" placeholder="you@example.com" required>
+            </div>
+
+            <div class="input-group">
+              <i data-lucide="lock"></i>
+              <label>Password</label>
+              <input type="password" id="reg-pass" placeholder="••••••••" required minlength="6">
+            </div>
+
+            <p id="reg-msg" class="msg hidden"></p>
+
+            <button id="btn-reg" class="btn">
+              <span>Sign Up</span>
+            </button>
+
+            <p class="text-center text-sm text-gray-400">
+              Already have an account?
+              <button type="button" id="to-login" class="underline text-cyan-300">Log in</button>
+            </p>
+          </div>
+
+          <!-- LOGIN -->
+          <div id="login" class="space-y-5">
+            <h1 class="text-center text-3xl font-bold bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">
+              Welcome Back
+            </h1>
+
+            <div class="input-group">
+              <i data-lucide="mail"></i>
+              <label>Email</label>
+              <input type="email" id="log-email" placeholder="you@example.com" required>
+            </div>
+
+            <div class="input-group">
+              <i data-lucide="lock"></i>
+              <label>Password</label>
+              <input type="password" id="log-pass" placeholder="••••••••" required>
+            </div>
+
+            <p id="log-msg" class="msg hidden"></p>
+
+            <button id="btn-login" class="btn">
+              <span>Log In</span>
+            </button>
+
+            <p class="text-center text-sm text-gray-400">
+              No account?
+              <button type="button" id="to-register" class="underline text-cyan-300">Register</button>
+            </p>
+          </div>
+        </div>
+
+        <!-- BACK: Logged In -->
+        <div id="back" class="face back flex flex-col items-center justify-center space-y-5">
+          <h1 id="welcome-name" class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent"></h1>
+          <p id="welcome-email" class="text-sm text-gray-300"></p>
+          <button id="btn-logout" class="btn w-auto px-8">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SUPABASE + LOGIC ==================== -->
+  <script type="module">
+    // === 1. REPLACE WITH YOUR SUPABASE CREDENTIALS ===
+    const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+    const SUPABASE_ANON_KEY = 'your-anon-public-key-here';
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // === 2. DOM Elements ===
+    const card = document.getElementById('card');
+    const loginDiv = document.getElementById('login');
+    const registerDiv = document.getElementById('register');
+
+    const toRegisterBtn = document.getElementById('to-register');
+    const toLoginBtn = document.getElementById('to-login');
+    const btnLogin = document.getElementById('btn-login');
+    const btnReg = document.getElementById('btn-reg');
+    const btnLogout = document.getElementById('btn-logout');
+
+    const logMsg = document.getElementById('log-msg');
+    const regMsg = document.getElementById('reg-msg');
+
+    // === 3. Flip Helpers ===
+    const showLogin = () => { loginDiv.classList.remove('hidden'); registerDiv.classList.add('hidden'); card.classList.remove('active'); };
+    const showRegister = () => { registerDiv.classList.remove('hidden'); loginDiv.classList.add('hidden'); card.classList.remove('active'); };
+    const flipToBack = () => card.classList.add('active');
+    const flipToFront = () => card.classList.remove('active');
+
+    toRegisterBtn.onclick = () => { clearMsgs(); showRegister(); };
+    toLoginBtn.onclick = () => { clearMsgs(); showLogin(); };
+
+    // === 4. UI Helpers ===
+    const setLoading = (btn, loading) => {
+      const span = btn.querySelector('span');
+      if (loading) {
+        span.innerHTML = `<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="60"/></svg>`;
+      } else {
+        span.textContent = btn.id.includes('login') ? 'Log In' : 'Sign Up';
+      }
+      btn.disabled = loading;
+    };
+    const clearMsgs = () => { logMsg.classList.add('hidden'); regMsg.classList.add('hidden'); };
+    const showMsg = (el, txt, ok) => {
+      el.textContent = txt;
+      el.className = ok ? 'msg success' : 'msg error';
+      el.classList.remove('hidden');
+    };
+
+    // === 5. Auth Handlers ===
+    btnReg.onclick = async () => {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-pass').value;
+      if (!email || !pass) return;
+      setLoading(btnReg, true);
+      const { error } = await supabase.auth.signUp({
+        email, password: pass,
+        options: { data: { name } }
+      });
+      setLoading(btnReg, false);
+      if (error) showMsg(regMsg, error.message, false);
+      else {
+        showMsg(regMsg, 'Check your inbox to confirm!', true);
+        setTimeout(showLogin, 2200);
+      }
+    };
+
+    btnLogin.onclick = async () => {
+      const email = document.getElementById('log-email').value.trim();
+      const pass = document.getElementById('log-pass').value;
+      if (!email || !pass) return;
+      setLoading(btnLogin, true);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      setLoading(btnLogin, false);
+      if (error) showMsg(logMsg, error.message, false);
+      else if (data.user) showLoggedIn(data.user);
+    };
+
+    btnLogout.onclick = async () => {
+      await supabase.auth.signOut();
+      showLogin();
+      flipToFront();
+    };
+
+    const showLoggedIn = user => {
+      const name = user.user_metadata?.name || user.email.split('@')[0];
+      document.getElementById('welcome-name').textContent = `Hi, ${name}!`;
+      document.getElementById('welcome-email').textContent = user.email;
+      flipToBack();
+    };
+
+    // === 6. Session Init ===
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) showLoggedIn(session.user);
+    else showLogin();
+
+    supabase.auth.onAuthStateChange((_e, sess) => {
+      if (sess?.user) showLoggedIn(sess.user);
+      else { showLogin(); flipToFront(); }
+    });
+
+    // === 7. Icons ===
+    lucide.createIcons();
+  </script>
+
+  <!-- ==================== CANVAS ANIMATION (unchanged) ==================== -->
+  <script>
+    const canvas = document.getElementById('data-bg');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const nodes = [], particles = [];
+
+    window.addEventListener('resize',()=>{canvas.width=innerWidth;canvas.height=innerHeight;});
+
+    class Node{
+      constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.size=Math.random()*4+2;this.vx=(Math.random()-.5)*.5;this.vy=(Math.random()-.5)*.5;this.pulse=Math.random()*Math.PI*2;}
+      update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>canvas.width)this.vx*=-1;if(this.y<0||this.y>canvas.height)this.vy*=-1;this.pulse+=.05;}
+      draw(){
+        const g=10+Math.sin(this.pulse)*5;
+        ctx.beginPath();ctx.arc(this.x,this.y,this.size+g,0,Math.PI*2);
+        ctx.fillStyle=`rgba(0,212,255,${.8+Math.sin(this.pulse)*.2})`;
+        ctx.shadowBlur=20;ctx.shadowColor='#00D4FF';ctx.fill();ctx.shadowBlur=0;
+      }
+    }
+    function connect(a,b){
+      const d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<180){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(0,212,255,${1-d/180})`;ctx.lineWidth=1;ctx.stroke();}
+    }
+    class Particle{
+      constructor(){this.x=Math.random()*canvas.width;this.y=-10;this.vy=Math.random()*2+1;this.char=['0','1'][Math.floor(Math.random()*2)];this.life=255;}
+      update(){this.y+=this.vy;this.life-=2;}
+      draw(){ctx.font='12px monospace';ctx.fillStyle=`rgba(0,255,180,${this.life/255})`;ctx.fillText(this.char,this.x,this.y);}
+    }
+
+    for(let i=0;i<40;i++)nodes.push(new Node());
+    for(let i=0;i<80;i++)particles.push(new Particle());
+
+    (function anim(){
+      ctx.fillStyle='rgba(10,10,26,.05)';ctx.fillRect(0,0,canvas.width,canvas.height);
+      nodes.forEach(n=>{n.update();n.draw();});
+      for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++)connect(nodes[i],nodes[j]);
+      particles.forEach((p,idx)=>{p.update();p.draw();if(p.life<=0||p.y>canvas.height)particles[idx]=new Particle();});
+      requestAnimationFrame(anim);
+    })();
+  </script>
+</body>
+</html>
